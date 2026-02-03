@@ -11,6 +11,10 @@ To start the server, follow these steps:
 
 To start the client, follow these steps:
 - Open a new console window and navigate to the FrontEnd folder i.e `cd path\to\source\repos\ProductAndSalesDisplay\FrontEnd`
+- Install the dependencies if you haven't already:
+  ```Powershell
+	npm install
+  ```
 - Run the following command to start the application:
   ```Powershell
 	npm run dev
