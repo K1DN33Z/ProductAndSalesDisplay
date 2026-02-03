@@ -15,6 +15,7 @@ To start the client, follow these steps:
   ```Powershell
 	npm run dev
   ```
+- Client should be running on `http://localhost:5173/` as set in vite.config.js
 
 To run backend tests, follow these steps:
 - In your console make sure you are in the .csproj folder location i.e `cd path\to\source\repos\ProductAndSalesDisplay\ProductAndSalesDisplay`
