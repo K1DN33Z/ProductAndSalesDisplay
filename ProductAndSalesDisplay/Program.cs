@@ -10,16 +10,16 @@ builder.Services.AddSwaggerGen();
 // Register HttpClient and DataFetcherService
 builder.Services.AddHttpClient<IProductFetchService, ProductFetchService>();
 
-// Add CORS for later React integration
-//builder.Services.AddCors(options =>
-//{
-//    options.AddPolicy("AllowReact", policy =>
-//    {
-//        policy.WithOrigins("http://localhost:3000", "http://localhost:5173") // Common React dev ports
-//              .AllowAnyHeader()
-//              .AllowAnyMethod();
-//    });
-//});
+// Add CORS for React integration
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReact", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") // Can change absed off configuration but should be good with default Vite port
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 var app = builder.Build();
 
@@ -30,7 +30,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//app.UseCors("AllowReact");
+app.UseCors("AllowReact");
 
 // app.UseAuthorization();
 
