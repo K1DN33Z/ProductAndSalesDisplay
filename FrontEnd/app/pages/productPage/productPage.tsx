@@ -51,7 +51,14 @@ export function ProductPage() {
 
   return (
       <>
-      Hello
+          <div className="justify-self-center font-sans text-5xl font-bold p-5">Products</div>
+          <div className="m-16">
+              <div className="grid grid-cols-4 gap-4">
+                  <div className="card bg-base-100 w-100 shadow-sm">
+                      Yo
+                  </div>
+              </div>
+          </div>
       </>
   );
 }
