@@ -71,7 +71,7 @@ export const fetchSalesForAllProducts = async () => {
                 salesData.data.forEach(sale => {
                     allSales.push({
                         saleId: sale.saleId,
-                        productId: product.id,
+                        productId: sale.productId,
                         description: product.description,
                         category: product.category,
                         salePrice: sale.salePrice,
