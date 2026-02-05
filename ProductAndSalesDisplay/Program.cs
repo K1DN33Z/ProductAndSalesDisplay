@@ -9,6 +9,7 @@ builder.Services.AddSwaggerGen();
 
 // Register HttpClient and DataFetcherService
 builder.Services.AddHttpClient<IProductFetchService, ProductFetchService>();
+builder.Services.AddHttpClient<IProductSaleFetchService, ProductSaleFetchService>();
 
 // Add CORS for React integration
 builder.Services.AddCors(options =>
