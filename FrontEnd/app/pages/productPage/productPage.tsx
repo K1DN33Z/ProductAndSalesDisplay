@@ -1,77 +1,59 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router";
+import { fetchProducts, fetchProductSales } from '../../api/productApi';
+import { ProductCard } from '../../components/ProductCard';
+import { ProductSummary } from '../../components/ProductSummary';
 
 export function ProductPage() {
+    // Helper variables
     const emptyProduct = {
         description: "",
         saleTotal: 0,
         quantityTotal: 0,
     };
+    
+    // Context setting
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [summaryLoading, setSummaryLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [selectedProduct, setSelectedProduct] = useState(emptyProduct)
-    let navigate = useNavigate();
+    const [selectedProduct, setSelectedProduct] = useState(emptyProduct);
 
+    // Package variables
+    const navigate = useNavigate();
+
+    // useEffects
     useEffect(() => {
-        fetchProducts();
+        loadProducts();
     }, []);
 
-    const fetchProducts = async () => {
-        try {
-            setLoading(true);
-            const response = await fetch('http://localhost:5250/api/product/products');
-            const result = await response.json();
-      
-            if (result.message === 'Success') {
-                setProducts(result.data);
-            } else {
-                setError('Failed to fetch products');
-            }
-        } catch (err) {
-            setError('Error fetching products: ' + err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchSalesFor = async (id: number) => {
-        try {
-            // Removed setLaoding because it is annoying
-            // setLoading(true);
-            // Fixed: remove curly braces around id in template literal
-            const response = await fetch(`http://localhost:5250/api/productsale/product-sales?id=${id}`);
-            const result = await response.json();
-      
-            if (result.message === 'Success') {
-                // Calculate totals from the sales data
-                const saleTotal = result.data.reduce((sum, sale) => sum + (sale.salePrice * sale.saleQty), 0);
-                const quantityTotal = result.data.reduce((sum, sale) => sum + sale.saleQty, 0);
-                
-                return { saleTotal, quantityTotal };
-            } else {
-                setError('Failed to fetch product sales');
-                return null;
-            }
-        } catch (err) {
-            setError('Error fetching product sales: ' + err.message);
-            return null;
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleSalesSummary = async (product: any) => {
-        // Fetch sales data for the selected product
-        const salesData = await fetchSalesFor(product.id);
+    // API calls
+    const loadProducts = async () => {
+        setLoading(true);
+        const result = await fetchProducts();
         
-        if (salesData) {
+        if (result.success) {
+            setProducts(result.data);
+            setError(null);
+        } else {
+            setError(result.error);
+        }
+        
+        setLoading(false);
+    };
+
+    const handleSalesSummary = async (product) => {
+        setSummaryLoading(true);
+        
+        // Fetch sales data for the selected product
+        const salesResult = await fetchProductSales(product.id);
+        
+        if (salesResult.success) {
             // Update selected product with sales totals
             setSelectedProduct({
                 ...product,
-                saleTotal: salesData.saleTotal,
-                quantityTotal: salesData.quantityTotal
+                saleTotal: salesResult.data.saleTotal,
+                quantityTotal: salesResult.data.quantityTotal
             });
         } else {
             // If fetch failed, just set the product without totals
@@ -80,11 +62,15 @@ export function ProductPage() {
                 saleTotal: 0,
                 quantityTotal: 0
             });
+            setError(salesResult.error);
         }
+        
+        setSummaryLoading(false);
     };
 
+    // Handlers
     const handleRefresh = () => {
-        fetchProducts();
+        loadProducts();
         setSelectedProduct(emptyProduct);
     };
 
@@ -92,6 +78,8 @@ export function ProductPage() {
         navigate("/sales");
     };
 
+
+    // Loading screen during data fetch
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen">
@@ -100,6 +88,7 @@ export function ProductPage() {
         );
     }
 
+    // Error screen
     if (error) {
         return (
             <div className="flex justify-center items-center min-h-screen">
@@ -126,54 +115,17 @@ export function ProductPage() {
             <div className="m-16">
                 <div className="grid grid-cols-4 gap-4 auto-rows-auto">
                     {products.map(product => (
-                        <div 
+                        <ProductCard 
                             key={product.id}
-                            className="card bg-base-100 shadow-sm cursor-pointer hover:shadow-lg transition-shadow" 
-                            onClick={() => handleSalesSummary(product)}
-                        >
-                            <figure className="w-full h-[200px] overflow-hidden">
-                                <img className="w-full h-full object-cover"
-                                    src={product.image}
-                                    alt={product.description} />
-                            </figure>
-                            <div className="card-body">
-                                <h2 className="card-title">
-                                    {product.description}
-                                    <div
-                                        className={`badge ${product.category === 'Fruit'
-                                                ? 'badge-primary'
-                                                : 'badge-accent'
-                                            }`}
-                                    >
-                                        {product.category}
-                                    </div>
-                                </h2>
-                                <p>Sales Price: {product.salesPrice}</p>
-                            </div>
-                        </div>
+                            product={product}
+                            onClick={handleSalesSummary}
+                        />
                     ))}
               
-                    <div className="col-start-4 row-start-1 row-span-2 bg-base-200 p-4 m-4 rounded-lg" id="summary">
-                        <div className="justify-self-start font-sans text-xl font-bold">Summary</div>
-                        {summaryLoading ? (
-                            <div className="flex justify-center items-center min-h-screen">
-                                <span className="loading loading-spinner loading-lg"></span>
-                            </div>
-                        ) : (
-                            selectedProduct.description !== "" ? (
-                                <div>
-                                    <p className="font-sans text-l font-bold p-3">Product:</p> 
-                                    <p className="font-sans text-m px-3">{selectedProduct.description}</p> 
-                                    <p className="font-sans text-l font-bold p-3">Total Quantity Sold:</p> 
-                                    <p className="font-sans text-m px-3">{selectedProduct.quantityTotal} <u>units</u> sold</p> 
-                                    <p className="font-sans text-l font-bold p-3">Total Sales Revenue:</p> 
-                                    <p className="font-sans text-m px-3">R {selectedProduct.saleTotal.toFixed(2)}</p> 
-                                </div>
-                            ) : (
-                                <div>Please select a product to view</div>
-                            )
-                        )}
-                    </div>
+                    <ProductSummary 
+                        product={selectedProduct}
+                        isLoading={summaryLoading}
+                    />
                 </div>
             </div>
         </>
