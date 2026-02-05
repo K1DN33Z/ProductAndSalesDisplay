@@ -4,16 +4,18 @@ import { useNavigate } from "react-router";
 export function ProductPage() {
     const emptyProduct = {
         description: "",
-        salesPrice: 0
+        saleTotal: 0,
+        quantityTotal: 0,
     };
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [summaryLoading, setSummaryLoading] = useState(false);
     const [error, setError] = useState(null);
     const [selectedProduct, setSelectedProduct] = useState(emptyProduct)
     let navigate = useNavigate();
 
     useEffect(() => {
-    fetchProducts();
+        fetchProducts();
     }, []);
 
     const fetchProducts = async () => {
@@ -24,9 +26,8 @@ export function ProductPage() {
       
             if (result.message === 'Success') {
                 setProducts(result.data);
-                console.log(result.data);
             } else {
-            setError('Failed to fetch products');
+                setError('Failed to fetch products');
             }
         } catch (err) {
             setError('Error fetching products: ' + err.message);
@@ -35,13 +36,56 @@ export function ProductPage() {
         }
     };
 
-    const handleSalesSummary = (product: any) => {
-        setSelectedProduct(product);
+    const fetchSalesFor = async (id: number) => {
+        try {
+            // Removed setLaoding because it is annoying
+            // setLoading(true);
+            // Fixed: remove curly braces around id in template literal
+            const response = await fetch(`http://localhost:5250/api/productsale/product-sales?id=${id}`);
+            const result = await response.json();
+      
+            if (result.message === 'Success') {
+                // Calculate totals from the sales data
+                const saleTotal = result.data.reduce((sum, sale) => sum + (sale.salePrice * sale.saleQty), 0);
+                const quantityTotal = result.data.reduce((sum, sale) => sum + sale.saleQty, 0);
+                
+                return { saleTotal, quantityTotal };
+            } else {
+                setError('Failed to fetch product sales');
+                return null;
+            }
+        } catch (err) {
+            setError('Error fetching product sales: ' + err.message);
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSalesSummary = async (product: any) => {
+        // Fetch sales data for the selected product
+        const salesData = await fetchSalesFor(product.id);
+        
+        if (salesData) {
+            // Update selected product with sales totals
+            setSelectedProduct({
+                ...product,
+                saleTotal: salesData.saleTotal,
+                quantityTotal: salesData.quantityTotal
+            });
+        } else {
+            // If fetch failed, just set the product without totals
+            setSelectedProduct({
+                ...product,
+                saleTotal: 0,
+                quantityTotal: 0
+            });
+        }
     };
 
     const handleRefresh = () => {
-      fetchProducts();
-      setSelectedProduct(emptyProduct);
+        fetchProducts();
+        setSelectedProduct(emptyProduct);
     };
 
     const navigateToSales = () => {
@@ -51,82 +95,87 @@ export function ProductPage() {
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen">
-            <span className="loading loading-spinner loading-lg"></span>
+                <span className="loading loading-spinner loading-lg"></span>
             </div>
         );
     }
 
     if (error) {
-    return (
-        <div className="flex justify-center items-center min-h-screen">
-        <div className="alert alert-error">
-            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>{error}</span>
-        </div>
-        </div>
-    );
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="alert alert-error">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>{error}</span>
+                </div>
+            </div>
+        );
     }
 
     return (
-    <>
-        <div className="columns-2">
-            <div className="justify-self-start font-sans text-5xl font-bold p-5">Products</div>
-            <div className="justify-self-end">
-                <button className="btn btn-wide btn-accent m-5 w-40" onClick={handleRefresh}>Refresh</button>
-                <button className="btn btn-wide btn-primary m-5 w-40" onClick={navigateToSales}>View Product Sales</button>
+        <>
+            <div className="columns-2">
+                <div className="justify-self-start font-sans text-5xl font-bold p-5">Products</div>
+                <div className="justify-self-end">
+                    <button className="btn btn-wide btn-accent m-5 w-40" onClick={handleRefresh}>Refresh</button>
+                    <button className="btn btn-wide btn-primary m-5 w-40" onClick={navigateToSales}>View Product Sales</button>
+                </div>
             </div>
-        </div>
 
-        <div className="m-16">
-            <div className="grid grid-cols-4 gap-4 auto-rows-auto">
-              {products.map(product => (
-                <div 
-                  key={product.id}
-                  className="card bg-base-100 shadow-sm" 
-                  onClick={() => handleSalesSummary(product)}
-                >
-                    <figure className="w-full h-[200px] overflow-hidden">
-                        <img className="w-full h-full object-cover"
-                            src={product.image}
-                            alt={product.description} />
-                    </figure>
-                    <div className="card-body">
-                        <h2 className="card-title">
-                            {product.description}
-                            <div
-                                className={`badge ${product.category === 'Fruit'
-                                        ? 'badge-primary'
-                                        : 'badge-accent'
-                                    }`}
-                            >
-                                {product.category}
+            <div className="m-16">
+                <div className="grid grid-cols-4 gap-4 auto-rows-auto">
+                    {products.map(product => (
+                        <div 
+                            key={product.id}
+                            className="card bg-base-100 shadow-sm cursor-pointer hover:shadow-lg transition-shadow" 
+                            onClick={() => handleSalesSummary(product)}
+                        >
+                            <figure className="w-full h-[200px] overflow-hidden">
+                                <img className="w-full h-full object-cover"
+                                    src={product.image}
+                                    alt={product.description} />
+                            </figure>
+                            <div className="card-body">
+                                <h2 className="card-title">
+                                    {product.description}
+                                    <div
+                                        className={`badge ${product.category === 'Fruit'
+                                                ? 'badge-primary'
+                                                : 'badge-accent'
+                                            }`}
+                                    >
+                                        {product.category}
+                                    </div>
+                                </h2>
+                                <p>Sales Price: {product.salesPrice}</p>
                             </div>
-                        </h2>
-                        <p>Sales Price: {product.salesPrice}</p>
+                        </div>
+                    ))}
+              
+                    <div className="col-start-4 row-start-1 row-span-2 bg-base-200 p-4 m-4 rounded-lg" id="summary">
+                        <div className="justify-self-start font-sans text-xl font-bold">Summary</div>
+                        {summaryLoading ? (
+                            <div className="flex justify-center items-center min-h-screen">
+                                <span className="loading loading-spinner loading-lg"></span>
+                            </div>
+                        ) : (
+                            selectedProduct.description !== "" ? (
+                                <div>
+                                    <p className="font-sans text-l font-bold p-3">Product:</p> 
+                                    <p className="font-sans text-m px-3">{selectedProduct.description}</p> 
+                                    <p className="font-sans text-l font-bold p-3">Total Quantity Sold:</p> 
+                                    <p className="font-sans text-m px-3">{selectedProduct.quantityTotal} <u>units</u> sold</p> 
+                                    <p className="font-sans text-l font-bold p-3">Total Sales Revenue:</p> 
+                                    <p className="font-sans text-m px-3">R {selectedProduct.saleTotal.toFixed(2)}</p> 
+                                </div>
+                            ) : (
+                                <div>Please select a product to view</div>
+                            )
+                        )}
                     </div>
                 </div>
-              ))}
-              
-              <div className="col-start-4 row-start-1 row-span-2 bg-base-200 p-4 m-4 rounded-lg" id="summary">
-                  <div className="justify-self-start font-sans text-xl font-bold">Summary</div>
-                  {selectedProduct.description !== "" ? 
-                      <div>
-                        Product: {selectedProduct.description}
-                        <br></br>
-                        Price: {selectedProduct.salesPrice}
-                        <br></br>
-                        Sold: 999
-                      </div>
-                      
-                  :
-                      <div>Please select a product to view</div>
-                  }
-                  
-              </div>
-          </div>
-        </div>
-    </>
+            </div>
+        </>
     );
 }
