@@ -53,17 +53,30 @@ export function ProductPage() {
     <>
         <div className="justify-self-center font-sans text-5xl font-bold p-5">Products</div>
         <div className="m-16">
-            <div className="grid grid-cols-4 gap-4">
-                
-                <figure>
-                    <img
-                        src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
-                        alt="Shoes" />
-                </figure>
-
-                <div className="card bg-base-100 w-100 shadow-sm">
-                    Yo
-                </div>
+                <div className="grid grid-cols-4 gap-4">
+                    {products.map(product => (
+                        <div className="card bg-base-100 w-100 shadow-sm">
+                            <figure className="w-full h-[200px] overflow-hidden">
+                                <img className="w-full h-full object-cover"
+                                    src={product.image}
+                                    alt={product.description} />
+                            </figure>
+                            <div class="card-body">
+                                <h2 class="card-title">
+                                    {product.description}
+                                    <div
+                                        className={`badge ${product.category === 'Fruit'
+                                                ? 'badge-primary'
+                                                : 'badge-accent'
+                                            }`}
+                                    >
+                                        {product.category}
+                                    </div>
+                                </h2>
+                                <p>Sales Price: { product.salesPrice}</p>
+                            </div>
+                        </div>
+                    ))}
             </div>
         </div>
     </>
