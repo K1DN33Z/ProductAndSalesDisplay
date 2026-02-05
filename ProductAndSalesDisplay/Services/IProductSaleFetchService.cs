@@ -4,6 +4,6 @@ namespace ProductAndSalesDisplay.Services
 {
     public interface IProductSaleFetchService
     {
-        Task<ProductSaleList> GetFormattedData();
+        Task<ProductSaleList> GetFormattedData(string id);
     }
 }

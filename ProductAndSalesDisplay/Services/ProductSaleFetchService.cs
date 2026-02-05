@@ -14,14 +14,15 @@ namespace ProductAndSalesDisplay.Services
             _httpClient = httpClient;
         }
 
-        public async Task<ProductSaleList> GetFormattedData()
+        public async Task<ProductSaleList> GetFormattedData(string id)
         {
             try
             {
-                var response = await _httpClient.GetAsync(_singularApiBaseUrl + "product-sales");
+                var response = await _httpClient.GetAsync($"{_singularApiBaseUrl}product-sales?Id={id}");
                 response.EnsureSuccessStatusCode();
                 var jsonString = await response.Content.ReadAsStringAsync();
                 var sales = JsonSerializer.Deserialize<List<ProductSale>>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<ProductSale>();
+
                 return new ProductSaleList
                 {
                     Data = sales,
