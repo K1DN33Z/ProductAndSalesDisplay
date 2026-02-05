@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from "react-router";
 
 export function ProductPage() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    let navigate = useNavigate();
 
     useEffect(() => {
     fetchProducts();
@@ -26,6 +28,10 @@ export function ProductPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const navigateToSales = () => {
+        navigate("/sales");
     };
 
     if (loading) {
@@ -51,34 +57,40 @@ export function ProductPage() {
 
     return (
     <>
-        <div className="justify-self-center font-sans text-5xl font-bold p-5">Products</div>
-        <div className="m-16">
-                <div className="grid grid-cols-4 gap-4">
-                    {products.map(product => (
-                        <div className="card bg-base-100 w-100 shadow-sm">
-                            <figure className="w-full h-[200px] overflow-hidden">
-                                <img className="w-full h-full object-cover"
-                                    src={product.image}
-                                    alt={product.description} />
-                            </figure>
-                            <div class="card-body">
-                                <h2 class="card-title">
-                                    {product.description}
-                                    <div
-                                        className={`badge ${product.category === 'Fruit'
-                                                ? 'badge-primary'
-                                                : 'badge-accent'
-                                            }`}
-                                    >
-                                        {product.category}
-                                    </div>
-                                </h2>
-                                <p>Sales Price: { product.salesPrice}</p>
-                            </div>
-                        </div>
-                    ))}
+        <div className="columns-2">
+            <div className="justify-self-start font-sans text-5xl font-bold p-5">Products</div>
+            <div className="justify-self-end">
+                <button className="btn btn-wide btn-accent m-5 w-40" onClick={fetchProducts}>Refresh</button>
+                <button className="btn btn-wide btn-primary m-5 w-40" onClick={navigateToSales}>View Product Sales</button>
             </div>
         </div>
+        <div className="m-16">
+            <div className="grid grid-cols-4 gap-4">
+                {products.map(product => (
+                    <div className="card bg-base-100 w-100 shadow-sm">
+                        <figure className="w-full h-[200px] overflow-hidden">
+                            <img className="w-full h-full object-cover"
+                                src={product.image}
+                                alt={product.description} />
+                        </figure>
+                        <div class="card-body">
+                            <h2 class="card-title">
+                                {product.description}
+                                <div
+                                    className={`badge ${product.category === 'Fruit'
+                                            ? 'badge-primary'
+                                            : 'badge-accent'
+                                        }`}
+                                >
+                                    {product.category}
+                                </div>
+                            </h2>
+                            <p>Sales Price: { product.salesPrice}</p>
+                        </div>
+                    </div>
+                ))}
+          </div>
+      </div>
     </>
     );
 }
